@@ -1,77 +1,111 @@
-import Tkinter as tk
-import ttk
-#from Tkinter.colorchooser import askcolor
-from tkColorChooser import askcolor
+# -*- coding: utf-8 -*-
 
-# mainapp makes a frame
+
+import sys
+
+# check if we are running python 3.x or python 2.x 
+if sys.version_info[0] >= 3:
+    # for python 3.x
+    import tkinter as tk
+    import tkinter.ttk as ttk
+    from tkinter.colorchooser import askcolor
+else:
+    # for python 2.x
+    import Tkinter as tk
+    import ttk
+    from tkColorChooser import askcolor
+
+
+
 class MainApp(tk.Frame):
-
+    
     def __init__(self, master):
-        #super().__init__(master=master)
+        """
+        This is the Main Window for our applicaiton. This Creates a frame
+        which will hold our application information 
+        """
         tk.Frame.__init__(self, master=master)
-        self.pack(side='top', fill='both', expand=True)
-
-        self.buttons = []
-
-        self.buttons.append(tk.Button(master=self, text='Button 1', command=self.btn1))
-        self.buttons.append(tk.Button(master=self, text='Button 2', command=self.btn2))
-        self.buttons.append(tk.Button(master=self, text='Button 3', command=self.btn3))
-        self.buttons.append(tk.Button(master=self, text='Button 4', command=self.btn4))
-
+        self.pack(side="top", fill="both", expand=True)
+        
+        self.buttons = []        
+        
+        self.buttons.append(ColorButton(self, "Button 1", [lambda x: print_color(x, "1")]))
+        self.buttons.append(ColorButton(self, "Button 2", [lambda x: print_color(x, "2")]))
+        self.buttons.append(ColorButton(self, "Button 3", [lambda x: print_color(x, "3")]))
+        self.buttons.append(ColorButton(self, "Button 4", [lambda x: print_color(x, "4")]))
+        
         for btn in self.buttons:
             btn.pack()
-
-        # button1 = tk.Button(master=self, text='chill', command=self.btn1)
-        # button1.pack()
-
-        # button1 = tk.Button(master=self, text='intense', command=self.btn2)
-        # button1.pack()
-
-        # button1 = tk.Button(master=self, text='solid', command=self.btn3)
-        # button1.pack()
-
-        # button1 = tk.Button(master=self, text='blackout', command=self.btn4)
-        # button1.pack()
-
-    def btn1(self):
-        print('button 1')
+        
+class ColorButton(tk.Frame):
+    
+    def __init__(self, master=None, btn_text="", callbacks=[]):
+        """
+        Tkinter widget containing a button and a canvas side by side that
+        can then change its color
+        
+        NB callbacks take a color
+        """
+        tk.Frame.__init__(self, master=master)
+        
+        self.button = ttk.Button(master=self, text=btn_text, command=self._btn1)
+        self.button.pack(side="left", padx=2, pady=2)
+        
+        self.canvas = tk.Canvas(master=self, width=20, height=20, relief="flat")
+        self.canvas.pack(side="left", padx=2, pady=2)
+        
+        self.rect = self.canvas.create_rectangle(0, 0, 20 ,20, fill="white")
+        
+        # set up a dictionary of callbacks to be run when the button is pressed
+        self._callbacks = {} # callback dictionary 
+        self._cur_cbh = 0 # current callback handel
+        
+        for callback in callbacks:
+            self.register_call(callback)
+        
+    def change_color(self, color):
+        self.canvas.itemconfig(self.rect, fill=color)
+  
+    def _btn1(self):
         mycolor = askcolor()
-        print mycolor
-        self.buttons[0].configure(fg='#ff00e0')
+        self.change_color(mycolor[-1])
+        for callback in self._callbacks:
+            # run all registred callbacks with the color
+            self._callbacks[callback](mycolor)
+        
+    def register_call(self, callback):
+        """
+        register a callback for the button press
+        """
+        self._callbacks[self._cur_cbh] = callback
+        cbh = self._cur_cbh
+        self._cur_cbh += 1
+        
+        return cbh
+        
+    def unregister_call(self, cbh):
+        """
+        unregister a callback by its handle
+        """
+        return self._callbacks.pop(cbh, None)
 
-    def btn2(self):
-        print('button 3')
+def print_color(color, btn=""):
+    print("Button {} color is {}".format(btn, color[-1]))
+        
+        
+def color_btn_program():
+    """
+    Function to encapsulate starting the Application
+    """
+    
+    root = tk.Tk()
+    root.title("Color Changer Application") # Change the window title
+    root.geometry("200x200") # set the defualt size to be 200x200 pixels 
+    
+    app = MainApp(root)
+    
+    root.mainloop()
 
-    def btn3(self):
-        print('button 4')
-
-    def btn4(self):
-        print('button 4')
-
-# class ColorButton(tk
-
-
-root = tk.Tk()
-app = MainApp(root)
-
-root.mainloop()
-
-
-# #Create & Configure root 
-# root = Tk()
-# Grid.rowconfigure(root, 0, weight=1)
-# Grid.columnconfigure(root, 0, weight=1)
-# 
-# #Create & Configure frame 
-# frame=Frame(root)
-# frame.grid(row=0, column=0, sticky=N+S+E+W)
-# 
-# #Create a 5x10 (rows x columns) grid of buttons inside the frame
-# for row_index in range(5):
-#     Grid.rowconfigure(frame, row_index, weight=1)
-#     for col_index in range(10):
-#         Grid.columnconfigure(frame, col_index, weight=1)
-#         btn = Button(frame) #create a button inside frame 
-#         btn.grid(row=row_index, column=col_index, sticky=N+S+E+W)  
-# 
-# root.mainloop()
+if __name__ == "__main__":
+    color_btn_program()
+    
